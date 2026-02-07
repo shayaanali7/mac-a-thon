@@ -1,65 +1,164 @@
-import Image from "next/image";
+import Link from 'next/link';
+import { Mic, FileText, Clock, Shield, Zap, Users } from 'lucide-react';
 
-export default function Home() {
+export default function LandingPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
+      {/* Header */}
+      <header className="bg-white shadow-sm">
+        <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <div className="bg-blue-600 p-2 rounded-lg">
+                <Mic className="w-6 h-6 text-white" />
+              </div>
+              <span className="text-2xl font-bold text-gray-900">MediScribe</span>
+            </div>
+            <Link
+              href="/conversations"
+              className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
+            >
+              View Conversations
+            </Link>
+          </div>
+        </nav>
+      </header>
+
+      {/* Hero Section */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="py-20 text-center">
+          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
+            Medical Transcription
+            <span className="block text-blue-600 mt-2">Made Simple</span>
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-xl text-gray-600 mb-10 max-w-3xl mx-auto">
+            Record doctor-patient conversations, get instant transcriptions, and generate
+            comprehensive medical summaries with AI-powered accuracy.
           </p>
+          <Link
+            href="/record"
+            className="inline-flex items-center px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold rounded-lg shadow-lg transform transition-all hover:scale-105"
+          >
+            <Mic className="w-6 h-6 mr-2" />
+            Start Recording
+          </Link>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* Features */}
+        <div className="py-16">
+          <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
+            Why Choose MediScribe?
+          </h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-white p-8 rounded-xl shadow-md hover:shadow-xl transition-shadow">
+              <div className="bg-blue-100 w-14 h-14 rounded-lg flex items-center justify-center mb-4">
+                <Mic className="w-7 h-7 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                Easy Recording
+              </h3>
+              <p className="text-gray-600">
+                Simple one-click recording interface to capture doctor-patient conversations
+                with crystal clear audio quality.
+              </p>
+            </div>
+
+            <div className="bg-white p-8 rounded-xl shadow-md hover:shadow-xl transition-shadow">
+              <div className="bg-blue-100 w-14 h-14 rounded-lg flex items-center justify-center mb-4">
+                <Users className="w-7 h-7 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                Speaker Identification
+              </h3>
+              <p className="text-gray-600">
+                Automatically separates doctor and patient speech, making transcriptions
+                clear and easy to follow.
+              </p>
+            </div>
+
+            <div className="bg-white p-8 rounded-xl shadow-md hover:shadow-xl transition-shadow">
+              <div className="bg-blue-100 w-14 h-14 rounded-lg flex items-center justify-center mb-4">
+                <FileText className="w-7 h-7 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                Medical Summaries
+              </h3>
+              <p className="text-gray-600">
+                AI-generated summaries highlight key medical information for quick
+                understanding by healthcare professionals.
+              </p>
+            </div>
+
+            <div className="bg-white p-8 rounded-xl shadow-md hover:shadow-xl transition-shadow">
+              <div className="bg-blue-100 w-14 h-14 rounded-lg flex items-center justify-center mb-4">
+                <Clock className="w-7 h-7 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                Save Time
+              </h3>
+              <p className="text-gray-600">
+                Reduce documentation time by up to 70% with automated transcription
+                and summary generation.
+              </p>
+            </div>
+
+            <div className="bg-white p-8 rounded-xl shadow-md hover:shadow-xl transition-shadow">
+              <div className="bg-blue-100 w-14 h-14 rounded-lg flex items-center justify-center mb-4">
+                <Shield className="w-7 h-7 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                HIPAA Compliant
+              </h3>
+              <p className="text-gray-600">
+                Your patient data is encrypted and stored securely, meeting all
+                healthcare privacy requirements.
+              </p>
+            </div>
+
+            <div className="bg-white p-8 rounded-xl shadow-md hover:shadow-xl transition-shadow">
+              <div className="bg-blue-100 w-14 h-14 rounded-lg flex items-center justify-center mb-4">
+                <Zap className="w-7 h-7 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                Instant Results
+              </h3>
+              <p className="text-gray-600">
+                Get transcriptions and summaries within seconds of finishing your
+                recording session.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* CTA Section */}
+        <div className="py-16 text-center">
+          <div className="bg-blue-600 rounded-2xl p-12 shadow-xl">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              Ready to Transform Your Workflow?
+            </h2>
+            <p className="text-blue-100 text-lg mb-8 max-w-2xl mx-auto">
+              Join healthcare professionals who are saving hours every week with
+              intelligent medical transcription.
+            </p>
+            <Link
+              href="/record"
+              className="inline-flex items-center px-8 py-4 bg-white hover:bg-gray-100 text-blue-600 text-lg font-semibold rounded-lg shadow-lg transform transition-all hover:scale-105"
+            >
+              <Mic className="w-6 h-6 mr-2" />
+              Start Your First Recording
+            </Link>
+          </div>
         </div>
       </main>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-8 mt-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <p className="text-gray-400">
+            © 2026 MediScribe. All rights reserved. HIPAA Compliant Medical Transcription.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
