@@ -1,121 +1,373 @@
-const { request } = require('undici');
 require("dotenv").config();
+const fs = require("fs");
+const path = require("path");
 
 const BASE_URL = "https://app.backboard.io/api";
 
 const headers = {
   "Content-Type": "application/json",
-  "X-API-Key": process.env.BACKBOARD_API_KEY
+  "X-API-Key": process.env.BACKBOARD_API_KEY,
 };
 
+/* =======================================================
+   HELPERS
+======================================================= */
+
+async function handle(res) {
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+  }
+  return res.json();
+}
+
+
+/* =======================================================
+   ASSISTANTS
+======================================================= */
+
+// Create
 async function createAssistant() {
   const res = await fetch(`${BASE_URL}/assistants`, {
     method: "POST",
     headers,
     body: JSON.stringify({
-      name: "Doctor Assistant",
-      system_prompt: "Summarize doctor-patient conversations clearly.",
-      model: 'gemini-2.5-pro'
-    })
+        name: "Doctor Assistant Open AI",
+        system_prompt: "You summarize doctor-patient conversations. Answer questions about diagnoses, injuries, and treatment history using only the conversation context. Be clear and factual.",
+        embedding_provider: "google",
+        embedding_model_name: "gemini-embedding-001-1536",
+        model_name: "gemini-2.5-pro",
+    }),
   });
-
-  const data = await res.json();
-  return data;
+  return handle(res);
 }
 
-// create thread
+// List
+async function listAssistants() {
+  const res = await fetch(`${BASE_URL}/assistants`, { headers });
+  return handle(res);
+}
+
+// Get
+async function getAssistant(assistantId) {
+  const res = await fetch(`${BASE_URL}/assistants/${assistantId}`, { headers });
+  return handle(res);
+}
+
+// Update
+async function updateAssistant(assistantId, data) {
+  const res = await fetch(`${BASE_URL}/assistants/${assistantId}`, {
+    method: "PUT",
+    headers,
+    body: JSON.stringify(data),
+  });
+  return handle(res);
+}
+
+// Delete
+async function deleteAssistant(assistantId) {
+  const res = await fetch(`${BASE_URL}/assistants/${assistantId}`, {
+    method: "DELETE",
+    headers,
+  });
+  return res.ok;
+}
+
+// List Assistant Threads
+async function listThreadsForAssistant(assistantId) {
+  const res = await fetch(
+    `${BASE_URL}/assistants/${assistantId}/threads`,
+    { headers }
+  );
+  return handle(res);
+}
+
+// List Assistant Documents
+async function listAssistantDocuments(assistantId) {
+  const res = await fetch(
+    `${BASE_URL}/assistants/${assistantId}/documents`,
+    { headers }
+  );
+  return handle(res);
+}
+
+// Upload Document to Assistant
+async function uploadAssistantDocument(assistantId, filePath) {
+  const form = new FormData();
+  form.append("file", fs.createReadStream(filePath), path.basename(filePath));
+
+  const res = await fetch(
+    `${BASE_URL}/assistants/${assistantId}/documents`,
+    {
+      method: "POST",
+      headers: { "X-API-Key": process.env.BACKBOARD_API_KEY }, // no content-type
+      body: form,
+    }
+  );
+
+  return handle(res);
+}
+
+
+/* =======================================================
+   THREADS
+======================================================= */
+
+// Create thread
 async function createThread(assistantId) {
   const res = await fetch(
     `${BASE_URL}/assistants/${assistantId}/threads`,
     {
       method: "POST",
-      headers
+      headers,
+      body: JSON.stringify({}),
     }
   );
-
-  return res.json();
+  return handle(res);
 }
 
-// send message
-async function sendMessage(threadId, content) {
+// async function deleteAllThreads() {
+//   try {
+//     const threads = await listThreads();
+    
+//     if (!threads || threads.length === 0) {
+//       console.log("No threads to delete");
+//       return { deleted: 0 };
+//     }
+
+//     const deletePromises = threads.map(async (thread) => {
+//       const { statusCode } = await request(`${BASE_URL}/threads/${thread.id}`, {
+//         method: 'DELETE',
+//         headers: {
+//           'X-API-Key': process.env.BACKBOARD_API_KEY
+//         }
+//       });
+//       return statusCode === 200 || statusCode === 204;
+//     });
+    
+//     await Promise.all(deletePromises);
+    
+//     console.log(`Successfully deleted ${threads.length} threads`);
+//     return { deleted: threads.length };
+//   } catch (err) {
+//     console.error("Error deleting all threads:", err);
+//     throw err;
+//   }
+// }
+
+// List all threads
+async function listThreads() {
+  const res = await fetch(`${BASE_URL}/threads`, { headers });
+  return handle(res);
+}
+
+// Get thread
+async function getThread(threadId) {
+  const res = await fetch(`${BASE_URL}/threads/${threadId}`, { headers });
+  return handle(res);
+}
+
+// Delete thread
+async function deleteThread(threadId) {
+  const res = await fetch(`${BASE_URL}/threads/${threadId}`, {
+    method: "DELETE",
+    headers,
+  });
+  return res.ok;
+}
+
+// List thread documents
+async function listThreadDocuments(threadId) {
   const res = await fetch(
-    `${BASE_URL}/threads/${threadId}/messages`,
+    `${BASE_URL}/threads/${threadId}/documents`,
+    { headers }
+  );
+  return handle(res);
+}
+
+
+/* =======================================================
+   MESSAGES
+======================================================= */
+
+const { request, FormData } = require('undici');
+
+async function sendMessage(threadId, content) {
+  const form = new FormData();
+
+  form.append("content", content);
+  form.append("llm_provider", "google");
+  form.append("model_name", "gemini-2.5-pro");
+  form.append("stream", "false");
+  form.append("memory", "Auto");
+  form.append("web_search", "off");
+  form.append("send_to_llm", "true");
+  form.append("metadata", "{}");
+
+  try {
+    const { statusCode, body } = await request(`${BASE_URL}/threads/${threadId}/messages`, {
+      method: "POST",
+      headers: {
+        // Remove Content-Type - undici's FormData handles it
+        Accept: '*/*',
+        "X-API-Key": process.env.BACKBOARD_API_KEY,
+      },
+      body: form
+    });
+
+    const data = await body.json();
+
+    if (statusCode !== 200) {
+      console.error("Error sending message:", statusCode, data);
+      return null;
+    }
+
+    console.log("Message sent successfully. Status:", statusCode);
+    return data;
+
+  } catch (err) {
+    console.error("Fetch error:", err);
+    return null;
+  }
+}
+
+
+/* =======================================================
+   DOCUMENTS
+======================================================= */
+
+// Upload to thread
+async function uploadDocument(threadId, filePath) {
+  const form = new FormData();
+  form.append("file", fs.createReadStream(filePath), path.basename(filePath));
+
+  const res = await fetch(
+    `${BASE_URL}/threads/${threadId}/documents`,
     {
       method: "POST",
-      headers,
-      body: JSON.stringify({
-        content,
-        stream: false,
-        memory: "Auto"
-      })
+      headers: { "X-API-Key": process.env.BACKBOARD_API_KEY },
+      body: form,
     }
   );
 
-  return res.json();
+  return handle(res);
 }
 
-async function listAssistants() {
-  try {
-    const { statusCode, body } = await request(`${BASE_URL}/assistants`, {
-      headers
-    });
-
-    if (statusCode !== 200) {
-      console.error('Failed to fetch assistants, status:', statusCode);
-      return;
-    }
-
-    const data = await body.json();
-    console.log('Assistants:', data);
-    return data;
-  } catch (err) {
-    console.error('Error fetching assistants:', err);
-  }
+// Delete
+async function deleteDocument(documentId) {
+  const res = await fetch(`${BASE_URL}/documents/${documentId}`, {
+    method: "DELETE",
+    headers,
+  });
+  return res.ok;
 }
 
-async function deleteAssistant(assistantId) {
-  try {
-    const { statusCode, body } = await request(`${BASE_URL}/assistants/${assistantId}`, {
-      method: 'DELETE',
-      headers
-    });
-
-    if (statusCode !== 200 && statusCode !== 204) {
-      console.error(`Failed to delete assistant ${assistantId}, status:`, statusCode);
-      return;
-    }
-
-    console.log(`Assistant ${assistantId} deleted successfully.`);
-    return true;
-  } catch (err) {
-    console.error('Error deleting assistant:', err);
-  }
+// Status
+async function getDocumentStatus(documentId) {
+  const res = await fetch(
+    `${BASE_URL}/documents/${documentId}/status`,
+    { headers }
+  );
+  return handle(res);
 }
 
-async function listModels() {
-  try {
-    const { statusCode, body } = await request(`${BASE_URL}/models/provider/google`, {
-      headers
-    });
 
-    if (statusCode !== 200) {
-      console.error('Failed to fetch models, status:', statusCode);
-      return;
-    }
+/* =======================================================
+   MEMORIES
+======================================================= */
 
-    const data = await body.json();
-    console.log('Models:', data);
-    return data;
-  } catch (err) {
-    console.error('Error fetching models:', err);
-  }
-};
+// List memories
+async function listMemories() {
+  const res = await fetch(`${BASE_URL}/memories`, { headers });
+  return handle(res);
+}
+
+// Add memory
+async function addMemory(data) {
+  const res = await fetch(`${BASE_URL}/memories`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(data),
+  });
+  return handle(res);
+}
+
+// Get memory
+async function getMemory(id) {
+  const res = await fetch(`${BASE_URL}/memories/${id}`, { headers });
+  return handle(res);
+}
+
+// Update memory
+async function updateMemory(id, data) {
+  const res = await fetch(`${BASE_URL}/memories/${id}`, {
+    method: "PUT",
+    headers,
+    body: JSON.stringify(data),
+  });
+  return handle(res);
+}
+
+// Delete memory
+async function deleteMemory(id) {
+  const res = await fetch(`${BASE_URL}/memories/${id}`, {
+    method: "DELETE",
+    headers,
+  });
+  return res.ok;
+}
+
+// Memory stats
+async function getMemoryStats() {
+  const res = await fetch(`${BASE_URL}/memories/stats`, { headers });
+  return handle(res);
+}
+
+// Memory operation status
+async function getMemoryOperationStatus(opId) {
+  const res = await fetch(`${BASE_URL}/memories/operations/${opId}`, {
+    headers,
+  });
+  return handle(res);
+}
+
+
+/* =======================================================
+   EXPORTS
+======================================================= */
 
 module.exports = {
+  // assistants
   createAssistant,
-  createThread,
-  sendMessage,
   listAssistants,
+  getAssistant,
+  updateAssistant,
   deleteAssistant,
-  listModels,
+  listThreadsForAssistant,
+  listAssistantDocuments,
+  uploadAssistantDocument,
+
+  // threads
+  createThread,
+//   deleteAllThreads,
+  listThreads,
+  getThread,
+  deleteThread,
+  listThreadDocuments,
+
+  // messages
+  sendMessage,
+
+  // documents
+  uploadDocument,
+  deleteDocument,
+  getDocumentStatus,
+
+  // memories
+  listMemories,
+  addMemory,
+  getMemory,
+  updateMemory,
+  deleteMemory,
+  getMemoryStats,
+  getMemoryOperationStatus,
 };
