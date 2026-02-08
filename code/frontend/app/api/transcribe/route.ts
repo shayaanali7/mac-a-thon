@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
         }
 
         const { dialogue } = await backendResponse.json();
-        console.log(dialogue)
+        console.log(dialogue);
         console.log('✅ Received', dialogue.length, 'dialogue entries from backend');
 
         // Parse speakers

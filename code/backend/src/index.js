@@ -1,9 +1,17 @@
 require("dotenv/config");
 const express = require("express");
 const transcribeRoute = require("./routes/transcribe.js");
+const cors = require('cors');
+const multer = require('multer');
 const { analyzeImagesWithGemini, generateSummaryWithGemini } = require('./services/gemini.js');
 
 const app = express();
+const upload = multer({ storage: multer.memoryStorage() });
+
+app.use(cors({
+  origin: 'http://localhost:3000',
+  credentials: true
+}));
 
 app.use(express.json());
 app.use("/api", transcribeRoute);
