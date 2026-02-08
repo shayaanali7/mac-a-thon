@@ -246,7 +246,9 @@ export default function ConversationDetailPage() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                  Conversation {conversation.id.slice(0, 6)}
+                  {conversation.summary?.chief_complaint
+                    ? conversation.summary.chief_complaint
+                    : 'Conversation Details'}
                 </h1>
                 <div className="flex items-center space-x-4 text-sm text-gray-600">
                   <span className="flex items-center">
