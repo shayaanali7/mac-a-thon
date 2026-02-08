@@ -106,7 +106,7 @@ export default function ConversationsPage() {
                             </div>
                             <span className="text-2xl font-bold text-gray-900">MediScribe</span>
                         </div>
-                        <div className="flex space-x-4">
+                        <div className="flex space-x-10">
                             <Link
                                 href="/record"
                                 className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
@@ -139,37 +139,16 @@ export default function ConversationsPage() {
 
                 {/* Search and Filter */}
                 <div className="bg-white rounded-xl shadow-md p-6 mb-8">
-                    <div className="grid md:grid-cols-2 gap-4">
+                    <div className="grid gap-4">
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-black w-5 h-5" />
                             <input
                                 type="text"
                                 placeholder="Search by patient initials or summary..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                                className="w-full pl-10 pr-4 py-3 border text-black border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                             />
-                        </div>
-
-                        <div className="relative">
-                            <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                            <select
-                                value={selectedDate}
-                                onChange={(e) => setSelectedDate(e.target.value)}
-                                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none appearance-none bg-white"
-                            >
-                                <option value="">All Dates</option>
-                                {uniqueDates.map(date => (
-                                    <option key={date} value={date}>
-                                        {new Date(date).toLocaleDateString('en-US', {
-                                            weekday: 'long',
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric'
-                                        })}
-                                    </option>
-                                ))}
-                            </select>
                         </div>
                     </div>
                 </div>
@@ -178,7 +157,7 @@ export default function ConversationsPage() {
                 <div className="space-y-4">
                     {isLoading ? (
                         <div className="bg-white rounded-xl shadow-md p-12 text-center">
-                            <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                            <FileText className="w-16 h-16 text-black mx-auto mb-4" />
                             <h3 className="text-xl font-semibold text-gray-900 mb-2">
                                 Loading conversations...
                             </h3>

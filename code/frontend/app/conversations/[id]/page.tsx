@@ -146,7 +146,7 @@ export default function ConversationDetailPage() {
               </div>
               <span className="text-2xl font-bold text-gray-900">MediScribe</span>
             </div>
-            <div className="flex space-x-4">
+            <div className="flex space-x-10">
               <Link
                 href="/conversations"
                 className="flex items-center text-blue-600 hover:text-blue-700 font-medium transition-colors"
@@ -156,7 +156,7 @@ export default function ConversationDetailPage() {
               </Link>
               <Link
                 href="/"
-                className="flex items-center text-gray-600 hover:text-gray-700 font-medium transition-colors"
+                className="flex items-center text-blue-600 hover:text-blue-700 font-medium transition-colors"
               >
                 <Home className="w-5 h-5 mr-1" />
                 Home
@@ -188,18 +188,9 @@ export default function ConversationDetailPage() {
                     <Clock className="w-4 h-4 mr-1" />
                     {headerTime}
                   </span>
-                  <span className="flex items-center">
-                    <FileText className="w-4 h-4 mr-1" />
-                    {formatDuration(conversation.duration)}
-                  </span>
                 </div>
               </div>
             </div>
-
-            <button className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
-              <Download className="w-5 h-5 mr-2" />
-              Export
-            </button>
           </div>
         </div>
 

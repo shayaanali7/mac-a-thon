@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Mic, Square, Play, Pause, Home, Save, Trash2 } from 'lucide-react';
+import { Mic, Square, Play, Pause, Home, Save, Trash2, ArrowLeft } from 'lucide-react';
 
 export default function RecordPage() {
   const router = useRouter();
@@ -157,13 +157,21 @@ export default function RecordPage() {
               </div>
               <span className="text-2xl font-bold text-gray-900">MediScribe</span>
             </div>
-            <Link
-              href="/"
-              className="flex items-center text-blue-600 hover:text-blue-700 font-medium transition-colors"
-            >
-              <Home className="w-5 h-5 mr-1" />
-              Home
-            </Link>
+            <div className="flex space-x-10">
+              <Link
+                href="/conversations"
+                className="flex items-center text-blue-600 hover:text-blue-700 font-medium transition-colors"
+              >
+                View Conversations
+              </Link>
+              <Link
+                href="/"
+                className="flex items-center text-blue-600 hover:text-blue-700 font-medium transition-colors"
+              >
+                <Home className="w-5 h-5 mr-1" />
+                Home
+              </Link>
+            </div>
           </div>
         </nav>
       </header>

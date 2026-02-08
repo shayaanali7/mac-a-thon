@@ -31,11 +31,11 @@ async function createAssistant() {
     method: "POST",
     headers,
     body: JSON.stringify({
-        name: "Doctor Assistant Open AI",
-        system_prompt: "You summarize doctor-patient conversations. Answer questions about diagnoses, injuries, and treatment history using only the conversation context. Be clear and factual.",
-        embedding_provider: "google",
-        embedding_model_name: "gemini-embedding-001-1536",
-        model_name: "gemini-2.5-pro",
+      name: "Doctor Assistant Open AI",
+      system_prompt: "You summarize doctor-patient conversations. Answer questions about diagnoses, injuries, and treatment history using only the conversation context. Be clear and factual.",
+      embedding_provider: "google",
+      embedding_model_name: "gemini-embedding-001-1536",
+      model_name: "gemini-2.5-pro",
     }),
   });
   return handle(res);
@@ -128,7 +128,7 @@ async function createThread(assistantId) {
 // async function deleteAllThreads() {
 //   try {
 //     const threads = await listThreads();
-    
+
 //     if (!threads || threads.length === 0) {
 //       console.log("No threads to delete");
 //       return { deleted: 0 };
@@ -143,9 +143,9 @@ async function createThread(assistantId) {
 //       });
 //       return statusCode === 200 || statusCode === 204;
 //     });
-    
+
 //     await Promise.all(deletePromises);
-    
+
 //     console.log(`Successfully deleted ${threads.length} threads`);
 //     return { deleted: threads.length };
 //   } catch (err) {
@@ -348,7 +348,7 @@ module.exports = {
 
   // threads
   createThread,
-//   deleteAllThreads,
+  //   deleteAllThreads,
   listThreads,
   getThread,
   deleteThread,

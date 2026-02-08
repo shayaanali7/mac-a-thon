@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Mic, FileText, Clock, Shield, Zap, Users } from 'lucide-react';
+import { Mic, FileText, Clock, MessageCircle, Zap, Users } from 'lucide-react';
 
 export default function LandingPage() {
   return (
@@ -104,14 +104,13 @@ export default function LandingPage() {
 
             <div className="bg-white p-8 rounded-xl shadow-md hover:shadow-xl transition-shadow">
               <div className="bg-blue-100 w-14 h-14 rounded-lg flex items-center justify-center mb-4">
-                <Shield className="w-7 h-7 text-blue-600" />
+                <MessageCircle className="w-7 h-7 text-blue-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                HIPAA Compliant
+                Ask AI About Any Visit
               </h3>
               <p className="text-gray-600">
-                Your patient data is encrypted and stored securely, meeting all
-                healthcare privacy requirements.
+                Ask AI for clarifications on past conversations and decisions.
               </p>
             </div>
 
@@ -155,7 +154,7 @@ export default function LandingPage() {
       <footer className="bg-gray-900 text-white py-8 mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p className="text-gray-400">
-            © 2026 MediScribe. All rights reserved. HIPAA Compliant Medical Transcription.
+            © 2026 MediScribe
           </p>
         </div>
       </footer>
