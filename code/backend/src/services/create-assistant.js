@@ -1,9 +1,9 @@
 // code/backend/src/services/create-assistant.js
 require("dotenv").config();
-const { createAssistant } = require("./backboard");
+const { createChatAssistant } = require("./backboard");
 
 async function main() {
-    const assistant = await createAssistant();
+    const assistant = await createChatAssistant();
     console.log("Assistant:", assistant);
     console.log("Assistant ID:", assistant.assistant_id || assistant.id);
 }
