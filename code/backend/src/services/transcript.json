@@ -1,0 +1,14 @@
+[
+  {
+    "speakerId": "speaker_0",
+    "text": "Hey, Doc, how was walking yesterday?",
+    "start": 0.68,
+    "end": 2.66
+  },
+  {
+    "speakerId": "speaker_1",
+    "text": "Yeah, my diagnosis is that, uh, you have arm rip-off ellitis, and pretty much I need-- you need to take Advils for a week, and that's it.",
+    "start": 3.779,
+    "end": 17.199
+  }
+]
