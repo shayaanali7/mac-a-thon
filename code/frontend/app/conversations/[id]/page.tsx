@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Camera, X, RefreshCw, Loader2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import {
@@ -62,7 +61,7 @@ function formatTime(seconds?: number) {
 export default function ConversationDetailPage() {
   const params = useParams();
   const conversationId = params?.id as string;
-  const [activeTab, setActiveTab] = useState<'transcript' | 'summary' | 'ai' | 'images'>('transcript');
+  const [activeTab, setActiveTab] = useState<'transcript' | 'summary' | 'ai'>('transcript');
   const [chatInput, setChatInput] = useState('');
   const [chatMessages, setChatMessages] = useState<Array<{ role: 'user' | 'assistant'; text: string }>>([]);
   const [chatThreadId, setChatThreadId] = useState<string | null>(null);
@@ -71,9 +70,6 @@ export default function ConversationDetailPage() {
   const [messages, setMessages] = useState<TranscriptEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [uploadedImages, setUploadedImages] = useState<File[]>([]);
-  const [isRegenerating, setIsRegenerating] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!conversationId) return;
@@ -110,52 +106,6 @@ export default function ConversationDetailPage() {
     };
   }, [conversationId]);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    setUploadedImages(prev => [...prev, ...files]);
-  };
-
-  const removeImage = (index: number) => {
-    setUploadedImages(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const regenerateSummary = async () => {
-    if (uploadedImages.length === 0) {
-      alert('Please upload at least one image first');
-      return;
-    }
-
-    setIsRegenerating(true);
-
-    try {
-      const formData = new FormData();
-      formData.append('conversationId', conversationId);
-
-      uploadedImages.forEach((image, index) => {
-        formData.append(`image_${index}`, image);
-      });
-
-      const response = await fetch('/api/regenerate-summary', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) throw new Error('Failed to regenerate');
-
-      const { summary } = await response.json();
-
-      setConversation(prev => prev ? { ...prev, summary } : null);
-      setUploadedImages([]);
-      setActiveTab('summary'); // Switch to summary tab to see result
-      alert('✅ Summary updated!');
-
-    } catch (error) {
-      console.error(error);
-      alert('❌ Failed to regenerate summary');
-    } finally {
-      setIsRegenerating(false);
-    }
-  };
 
   const headerDate = useMemo(() => {
     if (!conversation?.createdAt) return 'Unknown date';
@@ -298,16 +248,6 @@ export default function ConversationDetailPage() {
               >
                 <AlertCircle className="w-5 h-5 inline mr-2" />
                 Talk to AI
-              </button>
-              <button
-                onClick={() => setActiveTab('images')}
-                className={`flex-1 px-6 py-4 text-center font-semibold transition-colors ${activeTab === 'images'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
-                  }`}
-              >
-                <Camera className="w-5 h-5 inline mr-2" />
-                Add Images
               </button>
             </div>
           </div>
@@ -520,76 +460,6 @@ export default function ConversationDetailPage() {
                     {isChatSending ? 'Sending...' : 'Send'}
                   </button>
                 </form>
-              </div>
-            )}
-            {activeTab === 'images' && (
-              <div className="space-y-6">
-                <div className="mb-4">
-                  <h2 className="text-xl font-bold text-gray-900 mb-2">Add Medical Images</h2>
-                  <p className="text-gray-600">Upload prescriptions, notes, or lab results to enhance the summary</p>
-                </div>
-
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleImageUpload}
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                />
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isRegenerating}
-                    className="px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-medium"
-                  >
-                    <Camera className="w-4 h-4 inline mr-2" />
-                    Upload Images
-                  </button>
-
-                  {uploadedImages.length > 0 && (
-                    <button
-                      onClick={regenerateSummary}
-                      disabled={isRegenerating}
-                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium disabled:opacity-50"
-                    >
-                      {isRegenerating ? (
-                        <>
-                          <Loader2 className="w-4 h-4 inline mr-2 animate-spin" />
-                          Regenerating...
-                        </>
-                      ) : (
-                        <>
-                          <RefreshCw className="w-4 h-4 inline mr-2" />
-                          Regenerate Summary ({uploadedImages.length})
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
-
-                {/* Image Preview */}
-                {uploadedImages.length > 0 && (
-                  <div className="grid grid-cols-3 gap-4 mt-4">
-                    {uploadedImages.map((image, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={URL.createObjectURL(image)}
-                          alt={`Upload ${index + 1}`}
-                          className="w-full h-32 object-cover rounded-lg border-2 border-gray-200"
-                        />
-                        <button
-                          onClick={() => removeImage(index)}
-                          className="absolute top-2 right-2 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                        <p className="text-xs text-gray-500 mt-1 truncate">{image.name}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
             )}
           </div>
