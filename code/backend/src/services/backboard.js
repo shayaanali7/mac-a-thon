@@ -26,12 +26,12 @@ async function handle(res) {
 ======================================================= */
 
 // Create
-async function createAssistant() {
+async function createAnalyzerAssistant() {
   const res = await fetch(`${BASE_URL}/assistants`, {
     method: "POST",
     headers,
     body: JSON.stringify({
-      name: "Doctor Assistant Open AI",
+      name: "Doctor Analyzer Assistant Gemini",
       system_prompt: `You are a medical conversation analyzer. Respond only in valid JSON format with the following structure:
 
 {{
@@ -62,6 +62,41 @@ Important guidelines:
 - Use actual medical terminology when appropriate
 
 Return ONLY the JSON object, no markdown formatting, no extra text.`,
+      embedding_provider: "google",
+      embedding_model_name: "gemini-embedding-001-1536",
+      model_name: "gemini-2.5-pro",
+    }),
+  });
+  return handle(res);
+}
+
+async function createChatAssistant() {
+  const res = await fetch(`${BASE_URL}/assistants`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      name: "Chat Assistant Gemini",
+      system_prompt: `You are a helpful medical assistant with access to patient medical records and conversation transcripts. Your role is to answer questions about the patient's medical history, diagnoses, treatments, and appointments based on the documents and context provided.
+
+Guidelines:
+- Answer questions clearly and conversationally
+- Base your answers ONLY on the information available in the provided documents and context
+- If you don't have enough information to answer a question, say so clearly
+- When referencing medical information, be specific (mention dates, dosages, diagnoses as they appear in the records)
+- Be professional but friendly in tone
+- If asked about sensitive medical information, provide it factually without interpretation
+- When discussing medications, always include dosage, frequency, and duration if available
+- If asked to compare information across multiple visits or documents, provide a clear comparison
+
+Examples of questions you should be able to answer:
+- "What medications am I currently taking?"
+- "When was my last appointment?"
+- "What did the doctor diagnose me with during my visit on [date]?"
+- "What were my symptoms during my last visit?"
+- "Do I need to schedule a follow-up?"
+- "What instructions did the doctor give me?"
+
+Always maintain patient privacy and confidentiality. Provide accurate, helpful information based solely on the available medical records.`,
       embedding_provider: "google",
       embedding_model_name: "gemini-embedding-001-1536",
       model_name: "gemini-2.5-pro",
@@ -142,7 +177,7 @@ async function uploadAssistantDocument(assistantId, filePath) {
 ======================================================= */
 
 // Create thread
-async function createThreadAnalyzer(assistantId) {
+async function createThread(assistantId) {
   const res = await fetch(
     `${BASE_URL}/assistants/${assistantId}/threads`,
     {
@@ -285,6 +320,52 @@ ${formattedTranscript}`;
   }
 }
 
+async function sendMessageChat(threadId, userPrompt) {
+  const form = new FormData();
+
+  form.append("content", userPrompt);
+  form.append("llm_provider", "google");
+  form.append("model_name", "gemini-2.5-pro");
+  form.append("stream", "false");
+  form.append("memory", "Auto");
+  form.append("web_search", "off");
+  form.append("send_to_llm", "true");
+  form.append("metadata", "{}");
+
+  try {
+    const { statusCode, body } = await request(`${BASE_URL}/threads/${threadId}/messages`, {
+      method: "POST",
+      headers: {
+        Accept: '*/*',
+        "X-API-Key": process.env.BACKBOARD_API_KEY,
+      },
+      body: form
+    });
+
+    const data = await body.json();
+
+    if (statusCode !== 200) {
+      console.error("Error sending message:", statusCode, data);
+      return null;
+    }
+
+    console.log("Message sent successfully. Status:", statusCode);
+    
+    // Return the conversational response directly
+    return {
+      content: data.content,
+      message_id: data.message_id,
+      thread_id: data.thread_id,
+      retrieved_memories: data.retrieved_memories,
+      retrieved_files: data.retrieved_files
+    };
+
+  } catch (err) {
+    console.error("Fetch error:", err);
+    return null;
+  }
+}
+
 
 /* =======================================================
    DOCUMENTS
@@ -392,7 +473,8 @@ async function getMemoryOperationStatus(opId) {
 
 module.exports = {
   // assistants
-  createAssistant,
+  createAnalyzerAssistant,
+  createChatAssistant,
   listAssistants,
   getAssistant,
   updateAssistant,
@@ -402,7 +484,7 @@ module.exports = {
   uploadAssistantDocument,
 
   // threads
-  createThreadAnalyzer,
+  createThread,
   //   deleteAllThreads,
   listThreads,
   getThread,
