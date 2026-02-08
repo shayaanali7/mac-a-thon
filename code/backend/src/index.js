@@ -1,6 +1,7 @@
 require("dotenv/config");
 const express = require("express");
 const transcribeRoute = require("./routes/transcribe.js");
+const { listAssistants } = require("./services/backboard.js");
 
 const app = express();
 
@@ -13,5 +14,7 @@ app.listen(PORT, () => {
   const url = `http://localhost:${PORT}/`;
   console.log(`Server running — click: ${url}`);
 });
+
+console.log(await listAssistants());
 
 console.log("BACKBOARD_ASSISTANT_ID set:", Boolean(process.env.BACKBOARD_ASSISTANT_ID));
