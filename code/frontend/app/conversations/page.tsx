@@ -1,70 +1,98 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Home, Mic, Search, Calendar, Clock, FileText, ChevronRight, User, Stethoscope } from 'lucide-react';
 
-// Mock data for demonstration
-const mockConversations = [
-    {
-        id: '1',
-        date: '2026-02-07',
-        time: '10:30 AM',
-        duration: '15:30',
-        patientInitials: 'JD',
-        summary: 'Annual checkup, blood pressure monitoring, lifestyle recommendations',
-        hasTranscript: true,
-    },
-    {
-        id: '2',
-        date: '2026-02-07',
-        time: '09:00 AM',
-        duration: '22:15',
-        patientInitials: 'SM',
-        summary: 'Follow-up for diabetes management, medication adjustment needed',
-        hasTranscript: true,
-    },
-    {
-        id: '3',
-        date: '2026-02-06',
-        time: '3:45 PM',
-        duration: '18:00',
-        patientInitials: 'RK',
-        summary: 'New patient consultation, initial assessment for chronic pain',
-        hasTranscript: true,
-    },
-    {
-        id: '4',
-        date: '2026-02-06',
-        time: '2:00 PM',
-        duration: '12:30',
-        patientInitials: 'LM',
-        summary: 'Routine examination, prescription refill discussion',
-        hasTranscript: true,
-    },
-    {
-        id: '5',
-        date: '2026-02-05',
-        time: '11:15 AM',
-        duration: '20:45',
-        patientInitials: 'TP',
-        summary: 'Cardiology consultation, ECG results review, treatment plan update',
-        hasTranscript: true,
-    },
-];
+type ConversationListItem = {
+    id: string;
+    audioFilename?: string;
+    audioUrl?: string;
+    duration?: number;
+    status?: 'processing' | 'completed' | 'failed';
+    createdAt?: string;
+};
+
+function formatDuration(seconds?: number) {
+    if (!seconds || seconds <= 0) return '--:--';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+function formatDateParts(createdAt?: string) {
+    if (!createdAt) return { date: 'Unknown', time: 'Unknown', dateKey: '' };
+    const date = new Date(createdAt);
+    if (Number.isNaN(date.getTime())) return { date: 'Unknown', time: 'Unknown', dateKey: '' };
+    const dateKey = date.toISOString().slice(0, 10);
+    return {
+        date: date.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        }),
+        time: date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+        dateKey,
+    };
+}
 
 export default function ConversationsPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedDate, setSelectedDate] = useState('');
+    const [conversations, setConversations] = useState<ConversationListItem[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const filteredConversations = mockConversations.filter(conv => {
-        const matchesSearch = conv.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            conv.patientInitials.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesDate = !selectedDate || conv.date === selectedDate;
-        return matchesSearch && matchesDate;
-    });
+    useEffect(() => {
+        let isActive = true;
 
-    const uniqueDates = Array.from(new Set(mockConversations.map(c => c.date))).sort().reverse();
+        async function loadConversations() {
+            try {
+                setIsLoading(true);
+                setError(null);
+                const response = await fetch('/api/conversations');
+                if (!response.ok) {
+                    throw new Error('Failed to load conversations');
+                }
+                const data = await response.json();
+                if (isActive) {
+                    setConversations(Array.isArray(data.conversations) ? data.conversations : []);
+                }
+            } catch (err) {
+                if (isActive) {
+                    setError(err instanceof Error ? err.message : 'Failed to load conversations');
+                }
+            } finally {
+                if (isActive) {
+                    setIsLoading(false);
+                }
+            }
+        }
+
+        loadConversations();
+
+        return () => {
+            isActive = false;
+        };
+    }, []);
+
+    const filteredConversations = useMemo(() => {
+        return conversations.filter((conv) => {
+            const matchesSearch = `${conv.id} ${conv.audioFilename ?? ''}`
+                .toLowerCase()
+                .includes(searchQuery.toLowerCase());
+            const { dateKey } = formatDateParts(conv.createdAt);
+            const matchesDate = !selectedDate || dateKey === selectedDate;
+            return matchesSearch && matchesDate;
+        });
+    }, [conversations, searchQuery, selectedDate]);
+
+    const uniqueDates = useMemo(() => {
+        const dates = conversations
+            .map((conv) => formatDateParts(conv.createdAt).dateKey)
+            .filter(Boolean);
+        return Array.from(new Set(dates)).sort().reverse();
+    }, [conversations]);
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
@@ -148,7 +176,22 @@ export default function ConversationsPage() {
 
                 {/* Conversations List */}
                 <div className="space-y-4">
-                    {filteredConversations.length === 0 ? (
+                    {isLoading ? (
+                        <div className="bg-white rounded-xl shadow-md p-12 text-center">
+                            <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                                Loading conversations...
+                            </h3>
+                        </div>
+                    ) : error ? (
+                        <div className="bg-white rounded-xl shadow-md p-12 text-center">
+                            <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                                Unable to load conversations
+                            </h3>
+                            <p className="text-gray-600">{error}</p>
+                        </div>
+                    ) : filteredConversations.length === 0 ? (
                         <div className="bg-white rounded-xl shadow-md p-12 text-center">
                             <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                             <h3 className="text-xl font-semibold text-gray-900 mb-2">
@@ -168,69 +211,72 @@ export default function ConversationsPage() {
                             </Link>
                         </div>
                     ) : (
-                        filteredConversations.map((conversation) => (
-                            <Link
-                                key={conversation.id}
-                                href={`/conversations/${conversation.id}`}
-                                className="block"
-                            >
-                                <div className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow p-6 cursor-pointer border-l-4 border-blue-600">
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex-1">
-                                            <div className="flex items-center space-x-4 mb-3">
-                                                <div className="bg-blue-100 w-12 h-12 rounded-full flex items-center justify-center">
-                                                    <User className="w-6 h-6 text-blue-600" />
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-lg font-semibold text-gray-900">
-                                                        Patient: {conversation.patientInitials}
-                                                    </h3>
-                                                    <div className="flex items-center space-x-4 text-sm text-gray-600">
-                                                        <span className="flex items-center">
-                                                            <Calendar className="w-4 h-4 mr-1" />
-                                                            {new Date(conversation.date).toLocaleDateString('en-US', {
-                                                                month: 'short',
-                                                                day: 'numeric',
-                                                                year: 'numeric'
-                                                            })}
-                                                        </span>
-                                                        <span className="flex items-center">
-                                                            <Clock className="w-4 h-4 mr-1" />
-                                                            {conversation.time}
-                                                        </span>
-                                                        <span className="flex items-center">
-                                                            <FileText className="w-4 h-4 mr-1" />
-                                                            {conversation.duration}
-                                                        </span>
+                        filteredConversations.map((conversation) => {
+                            const { date, time } = formatDateParts(conversation.createdAt);
+                            const durationLabel = formatDuration(conversation.duration);
+                            const summary = conversation.audioFilename
+                                ? `Audio file: ${conversation.audioFilename}`
+                                : 'Audio file unavailable';
+                            return (
+                                <Link
+                                    key={conversation.id}
+                                    href={`/conversations/${conversation.id}`}
+                                    className="block"
+                                >
+                                    <div className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow p-6 cursor-pointer border-l-4 border-blue-600">
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex-1">
+                                                <div className="flex items-center space-x-4 mb-3">
+                                                    <div className="bg-blue-100 w-12 h-12 rounded-full flex items-center justify-center">
+                                                        <User className="w-6 h-6 text-blue-600" />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-lg font-semibold text-gray-900">
+                                                            Conversation {conversation.id.slice(0, 6)}
+                                                        </h3>
+                                                        <div className="flex items-center space-x-4 text-sm text-gray-600">
+                                                            <span className="flex items-center">
+                                                                <Calendar className="w-4 h-4 mr-1" />
+                                                                {date}
+                                                            </span>
+                                                            <span className="flex items-center">
+                                                                <Clock className="w-4 h-4 mr-1" />
+                                                                {time}
+                                                            </span>
+                                                            <span className="flex items-center">
+                                                                <FileText className="w-4 h-4 mr-1" />
+                                                                {durationLabel}
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 </div>
+
+                                                <p className="text-gray-700 ml-16">
+                                                    {summary}
+                                                </p>
+
+                                                {conversation.status === 'completed' && (
+                                                    <div className="flex items-center mt-3 ml-16">
+                                                        <div className="flex items-center space-x-2 text-sm">
+                                                            <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full font-medium">
+                                                                <Stethoscope className="w-4 h-4 inline mr-1" />
+                                                                Transcribed
+                                                            </span>
+                                                            <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">
+                                                                <FileText className="w-4 h-4 inline mr-1" />
+                                                                Summary Available
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
 
-                                            <p className="text-gray-700 ml-16">
-                                                {conversation.summary}
-                                            </p>
-
-                                            {conversation.hasTranscript && (
-                                                <div className="flex items-center mt-3 ml-16">
-                                                    <div className="flex items-center space-x-2 text-sm">
-                                                        <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full font-medium">
-                                                            <Stethoscope className="w-4 h-4 inline mr-1" />
-                                                            Transcribed
-                                                        </span>
-                                                        <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">
-                                                            <FileText className="w-4 h-4 inline mr-1" />
-                                                            Summary Available
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            )}
+                                            <ChevronRight className="w-6 h-6 text-gray-400 flex-shrink-0 mt-3" />
                                         </div>
-
-                                        <ChevronRight className="w-6 h-6 text-gray-400 flex-shrink-0 mt-3" />
                                     </div>
-                                </div>
-                            </Link>
-                        ))
+                                </Link>
+                            );
+                        })
                     )}
                 </div>
 
@@ -246,7 +292,7 @@ export default function ConversationsPage() {
                             </div>
                             <div>
                                 <div className="text-3xl font-bold text-blue-600 mb-1">
-                                    {filteredConversations.filter(c => c.hasTranscript).length}
+                                    {filteredConversations.filter(c => c.status === 'completed').length}
                                 </div>
                                 <div className="text-gray-600">Transcribed</div>
                             </div>

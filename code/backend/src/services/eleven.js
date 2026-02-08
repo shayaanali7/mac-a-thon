@@ -10,11 +10,13 @@ const elevenlabs = new ElevenLabsClient();
   - file path string
   → into an audio Blob
 */
-function toAudioBlob(input) {
-  if (input instanceof Blob) return input;
+function toAudioBlob(input, mimeType = "audio/mp3") {
+  if (input instanceof Blob) {
+    return input;
+  }
 
   if (Buffer.isBuffer(input)) {
-    return new Blob([input], { type: "audio/mp3" });
+    return new Blob([input], { type: mimeType });
   }
 
   if (typeof input === "string") {
@@ -25,33 +27,41 @@ function toAudioBlob(input) {
   throw new Error("Unsupported audio input type");
 }
 
-async function transcribeAudio(input) {
-  const audioBlob = toAudioBlob(input);
+async function transcribeAudio(input, mimeType) {
+  const audioBlob = toAudioBlob(input, mimeType);
 
   const result = await elevenlabs.speechToText.convert({
     file: audioBlob,
     modelId: "scribe_v2",
     tagAudioEvents: true,
+    diarize: true,
     languageCode: "eng",
-    diarize: true
   });
 
-  // group words by speaker
+  if (!result || !Array.isArray(result.words)) {
+    return [];
+  }
+
+  // Group words by speaker
   const speakers = {};
 
-  result.words.forEach(word => {
-    if (word.type !== "word") return; // skip spacing/punctuation
+  result.words.forEach((word) => {
+    if (word.type !== "word") {
+      return; // skip spacing/punctuation
+    }
 
-    const speakerId = word.speakerId; // keep raw speakerId
-    if (!speakers[speakerId]) speakers[speakerId] = [];
+    const speakerId = word.speakerId;
+    if (!speakers[speakerId]) {
+      speakers[speakerId] = [];
+    }
     speakers[speakerId].push({
       text: word.text,
       start: word.start,
-      end: word.end
+      end: word.end,
     });
   });
 
-  // combine words into sentences per speaker
+  // Combine words into sentences per speaker
   const dialogue = [];
 
   Object.entries(speakers).forEach(([speakerId, words]) => {
@@ -60,18 +70,19 @@ async function transcribeAudio(input) {
     let endTime = null;
 
     words.forEach((word, idx) => {
-      if (!sentence) startTime = word.start;
+      if (!sentence) {
+        startTime = word.start;
+      }
 
       sentence += (sentence ? " " : "") + word.text;
       endTime = word.end;
 
-      // split on punctuation or last word
       if (/[.!?]$/.test(word.text) || idx === words.length - 1) {
         dialogue.push({
-          speakerId,   // keep the raw speakerId
+          speakerId,
           text: sentence,
           start: startTime,
-          end: endTime
+          end: endTime,
         });
 
         sentence = "";
