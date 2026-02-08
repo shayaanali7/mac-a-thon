@@ -1,4 +1,4 @@
-require("dotenv/config");
+require("dotenv").config({ override: true });
 const express = require("express");
 const transcribeRoute = require("./routes/transcribe.js");
 const chatRoute = require("./routes/chat.js");
