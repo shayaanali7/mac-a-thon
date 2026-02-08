@@ -293,7 +293,7 @@ async function addMemory(data) {
 
 // Get memory
 async function getMemory(id) {
-  const res = await fetch(`${BASE_URL}/memories/${id}`, { headers });
+  const res = await fetch(`${BASE_URL}/assistants/${id}/memories`, { headers });
   return handle(res);
 }
 
