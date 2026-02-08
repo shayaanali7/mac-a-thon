@@ -8,6 +8,9 @@ export interface Conversation {
     duration: number;
     createdAt: Date;
     status: 'processing' | 'completed' | 'failed';
+    summary?: ConversationSummary;
+    doctorSpeakerId?: string;
+    patientSpeakerId?: string;
 }
 
 export interface Message {
@@ -17,6 +20,21 @@ export interface Message {
     text: string;
     timestamp: number;
     createdAt: Date;
+}
+
+export interface ConversationSummary {
+    chief_complaint?: string;
+    symptoms?: string[];
+    diagnosis?: string;
+    medications?: Array<{
+        name?: string;
+        dosage?: string | null;
+        frequency?: string | null;
+        duration?: string | null;
+        instructions?: string | null;
+    }>;
+    follow_up?: string;
+    additional_notes?: string;
 }
 
 // Upload audio file to Firebase Storage
@@ -85,6 +103,20 @@ export async function updateConversationStatus(
 ): Promise<void> {
     await adminDb.collection('conversations').doc(conversationId).update({
         status,
+        updatedAt: Timestamp.now(),
+    });
+}
+
+export async function updateConversationSummary(
+    conversationId: string,
+    summary: ConversationSummary | null,
+    doctorSpeakerId?: string,
+    patientSpeakerId?: string
+): Promise<void> {
+    await adminDb.collection('conversations').doc(conversationId).update({
+        summary: summary ?? null,
+        doctorSpeakerId: doctorSpeakerId ?? null,
+        patientSpeakerId: patientSpeakerId ?? null,
         updatedAt: Timestamp.now(),
     });
 }

@@ -222,17 +222,9 @@ export default function ConversationsPage() {
                                                                 <Clock className="w-4 h-4 mr-1" />
                                                                 {time}
                                                             </span>
-                                                            <span className="flex items-center">
-                                                                <FileText className="w-4 h-4 mr-1" />
-                                                                {durationLabel}
-                                                            </span>
                                                         </div>
                                                     </div>
                                                 </div>
-
-                                                <p className="text-gray-700 ml-16">
-                                                    {summary}
-                                                </p>
 
                                                 {conversation.status === 'completed' && (
                                                     <div className="flex items-center mt-3 ml-16">

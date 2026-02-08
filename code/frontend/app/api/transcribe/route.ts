@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { saveMessages, updateConversationStatus } from '@/services/firebase';
+import { saveMessages, updateConversationStatus, updateConversationSummary } from '@/services/firebase';
 
 export async function POST(request: NextRequest) {
     let conversationId: string | undefined;
@@ -35,12 +35,13 @@ export async function POST(request: NextRequest) {
             throw new Error(error.details || 'Backend transcription failed');
         }
 
-        const { dialogue } = await backendResponse.json();
+        const { dialogue, analysis } = await backendResponse.json();
         console.log(dialogue);
+        console.log('🧠 Analyzer:', analysis);
         console.log('✅ Received', dialogue.length, 'dialogue entries from backend');
 
         // Parse speakers
-        const messages = parseDialogueToMessages(dialogue);
+        const messages = parseDialogueToMessages(dialogue, analysis);
         console.log('✅ Parsed', messages.length, 'messages');
 
         if (messages.length === 0) {
@@ -50,6 +51,19 @@ export async function POST(request: NextRequest) {
         // Save to Firestore
         console.log('⏳ Saving to Firestore...');
         await saveMessages(conversationId, messages);
+        await updateConversationSummary(
+            conversationId,
+            analysis ? {
+                chief_complaint: analysis.chief_complaint,
+                symptoms: analysis.symptoms,
+                diagnosis: analysis.diagnosis,
+                medications: analysis.medications,
+                follow_up: analysis.follow_up,
+                additional_notes: analysis.additional_notes,
+            } : null,
+            analysis?.doctor_speaker,
+            analysis?.patient_speaker
+        );
         await updateConversationStatus(conversationId, 'completed');
         console.log('✅ Saved to Firestore');
 
@@ -74,7 +88,8 @@ export async function POST(request: NextRequest) {
 }
 
 function parseDialogueToMessages(
-    dialogue: Array<{ speakerId: string; text: string; start: number; end: number }>
+    dialogue: Array<{ speakerId: string; text: string; start: number; end: number }>,
+    analysis?: { doctor_speaker?: string; patient_speaker?: string }
 ): Array<{ speaker: 'doctor' | 'patient'; text: string; timestamp: number }> {
     if (!dialogue || dialogue.length === 0) {
         return [];
@@ -83,10 +98,15 @@ function parseDialogueToMessages(
     const uniqueSpeakers = Array.from(new Set(dialogue.map(d => d.speakerId)));
     console.log('🏷️ Speakers found:', uniqueSpeakers);
 
-    const speakerMap: Record<string, 'doctor' | 'patient'> = {
-        [uniqueSpeakers[0]]: 'doctor',
-        [uniqueSpeakers[1] || uniqueSpeakers[0]]: 'patient',
-    };
+    const speakerMap: Record<string, 'doctor' | 'patient'> = {};
+
+    if (analysis?.doctor_speaker && analysis?.patient_speaker) {
+        speakerMap[analysis.doctor_speaker] = 'doctor';
+        speakerMap[analysis.patient_speaker] = 'patient';
+    } else {
+        speakerMap[uniqueSpeakers[0]] = 'doctor';
+        speakerMap[uniqueSpeakers[1] || uniqueSpeakers[0]] = 'patient';
+    }
 
     console.log('👨‍⚕️ Mapping:', speakerMap);
 

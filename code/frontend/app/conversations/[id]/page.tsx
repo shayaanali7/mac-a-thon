@@ -23,6 +23,20 @@ type ConversationDetail = {
   duration?: number;
   status?: 'processing' | 'completed' | 'failed';
   createdAt?: string;
+  summary?: {
+    chief_complaint?: string;
+    symptoms?: string[];
+    diagnosis?: string;
+    medications?: Array<{
+      name?: string;
+      dosage?: string | null;
+      frequency?: string | null;
+      duration?: string | null;
+      instructions?: string | null;
+    }>;
+    follow_up?: string;
+    additional_notes?: string;
+  } | null;
 };
 
 type TranscriptEntry = {
@@ -342,12 +356,88 @@ export default function ConversationDetailPage() {
                   <h2 className="text-xl font-bold text-gray-900 mb-2">Medical Summary</h2>
                   <p className="text-gray-600">Clinical overview for healthcare professionals</p>
                 </div>
-                <div className="bg-white rounded-lg p-6 border border-gray-200">
-                  <p className="text-gray-600">
-                    No structured summary is available yet. This section can be filled once summary
-                    generation is enabled.
-                  </p>
-                </div>
+                {!conversation.summary && (
+                  <div className="bg-white rounded-lg p-6 border border-gray-200">
+                    <p className="text-gray-600">
+                      No structured summary is available yet. This section can be filled once summary
+                      generation is enabled.
+                    </p>
+                  </div>
+                )}
+                {conversation.summary && (
+                  <div className="space-y-5">
+                    <div className="bg-blue-50 rounded-lg p-5 border-l-4 border-blue-600">
+                      <h3 className="font-semibold text-gray-900 mb-2 flex items-center">
+                        <AlertCircle className="w-5 h-5 mr-2 text-blue-600" />
+                        Chief Complaint
+                      </h3>
+                      <p className="text-gray-700">
+                        {conversation.summary.chief_complaint || 'Not provided'}
+                      </p>
+                    </div>
+
+                    <div className="bg-white rounded-lg p-5 border border-gray-200">
+                      <h3 className="font-semibold text-gray-900 mb-3">Symptoms</h3>
+                      {conversation.summary.symptoms && conversation.summary.symptoms.length > 0 ? (
+                        <ul className="space-y-2">
+                          {conversation.summary.symptoms.map((symptom, index) => (
+                            <li key={index} className="flex items-start">
+                              <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-semibold mr-3 mt-0.5 flex-shrink-0">
+                                {index + 1}
+                              </span>
+                              <span className="text-gray-700">{symptom}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-gray-600">No symptoms listed.</p>
+                      )}
+                    </div>
+
+                    <div className="bg-white rounded-lg p-5 border border-gray-200">
+                      <h3 className="font-semibold text-gray-900 mb-3">Assessment / Diagnosis</h3>
+                      <p className="text-gray-700">
+                        {conversation.summary.diagnosis || 'Not provided'}
+                      </p>
+                    </div>
+
+                    <div className="bg-white rounded-lg p-5 border border-gray-200">
+                      <h3 className="font-semibold text-gray-900 mb-3">Medications</h3>
+                      {conversation.summary.medications && conversation.summary.medications.length > 0 ? (
+                        <ul className="space-y-3">
+                          {conversation.summary.medications.map((med, index) => (
+                            <li key={index} className="text-gray-700">
+                              <span className="font-semibold">{med.name || 'Medication'}</span>
+                              {med.dosage ? ` — ${med.dosage}` : ''}
+                              {med.frequency ? `, ${med.frequency}` : ''}
+                              {med.duration ? `, ${med.duration}` : ''}
+                              {med.instructions ? ` (${med.instructions})` : ''}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-gray-600">No medications listed.</p>
+                      )}
+                    </div>
+
+                    <div className="bg-green-50 rounded-lg p-5 border-l-4 border-green-600">
+                      <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+                        <ClipboardList className="w-5 h-5 mr-2 text-green-600" />
+                        Follow Up
+                      </h3>
+                      <p className="text-gray-700">
+                        {conversation.summary.follow_up || 'Not provided'}
+                      </p>
+                    </div>
+
+                    <div className="bg-white rounded-lg p-5 border border-gray-200">
+                      <h3 className="font-semibold text-gray-900 mb-3">Additional Notes</h3>
+                      <p className="text-gray-700">
+                        {conversation.summary.additional_notes || 'Not provided'}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
