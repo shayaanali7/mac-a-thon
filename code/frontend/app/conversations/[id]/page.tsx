@@ -47,7 +47,9 @@ function formatTime(seconds?: number) {
 export default function ConversationDetailPage() {
   const params = useParams();
   const conversationId = params?.id as string;
-  const [activeTab, setActiveTab] = useState<'transcript' | 'summary'>('transcript');
+  const [activeTab, setActiveTab] = useState<'transcript' | 'summary' | 'ai'>('transcript');
+  const [chatInput, setChatInput] = useState('');
+  const [chatMessages, setChatMessages] = useState<Array<{ role: 'user' | 'assistant'; text: string }>>([]);
   const [conversation, setConversation] = useState<ConversationDetail | null>(null);
   const [messages, setMessages] = useState<TranscriptEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -218,6 +220,16 @@ export default function ConversationDetailPage() {
                 <ClipboardList className="w-5 h-5 inline mr-2" />
                 Medical Summary
               </button>
+              <button
+                onClick={() => setActiveTab('ai')}
+                className={`flex-1 px-6 py-4 text-center font-semibold transition-colors ${activeTab === 'ai'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-600 hover:text-gray-900'
+                  }`}
+              >
+                <AlertCircle className="w-5 h-5 inline mr-2" />
+                Talk to AI
+              </button>
             </div>
           </div>
 
@@ -275,6 +287,53 @@ export default function ConversationDetailPage() {
                     generation is enabled.
                   </p>
                 </div>
+              </div>
+            )}
+
+            {activeTab === 'ai' && (
+              <div className="space-y-6">
+                <div className="mb-4">
+                  <h2 className="text-xl font-bold text-gray-900 mb-2">Talk to AI</h2>
+                </div>
+                <div className="bg-white rounded-lg border border-gray-200 p-4 h-80 overflow-y-auto space-y-4">
+                  {chatMessages.length === 0 && (
+                    <p className="text-black">Ask questions about this conversation.</p>
+                  )}
+                  {chatMessages.map((msg, index) => (
+                    <div
+                      key={index}
+                      className={`p-3 rounded-lg ${msg.role === 'user'
+                        ? 'bg-blue-50 border border-blue-200 ml-auto'
+                        : 'bg-gray-50 border border-gray-200'
+                        }`}
+                    >
+                      <p className="text-sm text-black">{msg.text}</p>
+                    </div>
+                  ))}
+                </div>
+                <form
+                  className="flex gap-3"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    const next = chatInput.trim();
+                    if (!next) return;
+                    setChatMessages((prev) => [...prev, { role: 'user', text: next }]);
+                    setChatInput('');
+                  }}
+                >
+                  <input
+                    value={chatInput}
+                    onChange={(event) => setChatInput(event.target.value)}
+                    placeholder="Ask about clarification, meds, or next steps..."
+                    className="flex-1 px-4 py-3 border text-gray-700 placeholder:text-gray-500 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  />
+                  <button
+                    type="submit"
+                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+                  >
+                    Send
+                  </button>
+                </form>
               </div>
             )}
           </div>

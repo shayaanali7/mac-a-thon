@@ -72,7 +72,6 @@ export async function POST(request: NextRequest) {
     }
 }
 
-// Helper function to parse dialogue
 function parseDialogueToMessages(
     dialogue: Array<{ speakerId: string; text: string; start: number; end: number }>
 ): Array<{ speaker: 'doctor' | 'patient'; text: string; timestamp: number }> {
