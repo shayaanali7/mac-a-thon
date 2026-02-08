@@ -1,7 +1,7 @@
 const express = require("express");
 const multer = require("multer");
 const { transcribeAudio } = require("../services/eleven.js");
-const { createThreadAnalyzer, sendMessageAnalyzer } = require("../services/backboard.js");
+const { createThread, sendMessageAnalyzer } = require("../services/backboard.js");
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -31,7 +31,7 @@ router.post("/transcribe", upload.single("audio"), async (req, res) => {
       try {
         console.log("🤖 Creating analyzer thread...");
         console.log("🧩 Assistant ID:", assistantId);
-        const thread = await createThreadAnalyzer(assistantId);
+        const thread = await createThread(assistantId);
         console.log("🧵 Thread response:", thread);
 
         const threadId = thread?.id || thread?.thread_id;

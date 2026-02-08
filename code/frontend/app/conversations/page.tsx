@@ -11,6 +11,9 @@ type ConversationListItem = {
     duration?: number;
     status?: 'processing' | 'completed' | 'failed';
     createdAt?: string;
+    summary?: {
+        chief_complaint?: string;
+    } | null;
 };
 
 function formatDuration(seconds?: number) {
@@ -78,7 +81,7 @@ export default function ConversationsPage() {
 
     const filteredConversations = useMemo(() => {
         return conversations.filter((conv) => {
-            const matchesSearch = `${conv.id} ${conv.audioFilename ?? ''}`
+            const matchesSearch = `${conv.summary?.chief_complaint ?? ''} ${conv.audioFilename ?? ''}`
                 .toLowerCase()
                 .includes(searchQuery.toLowerCase());
             const { dateKey } = formatDateParts(conv.createdAt);
@@ -193,6 +196,9 @@ export default function ConversationsPage() {
                         filteredConversations.map((conversation) => {
                             const { date, time } = formatDateParts(conversation.createdAt);
                             const durationLabel = formatDuration(conversation.duration);
+                            const title = conversation.summary?.chief_complaint
+                                ? conversation.summary.chief_complaint
+                                : `Conversation on ${date}`;
                             const summary = conversation.audioFilename
                                 ? `Audio file: ${conversation.audioFilename}`
                                 : 'Audio file unavailable';
@@ -211,7 +217,7 @@ export default function ConversationsPage() {
                                                     </div>
                                                     <div>
                                                         <h3 className="text-lg font-semibold text-gray-900">
-                                                            Conversation {conversation.id.slice(0, 6)}
+                                                            {title}
                                                         </h3>
                                                         <div className="flex items-center space-x-4 text-sm text-gray-600">
                                                             <span className="flex items-center">

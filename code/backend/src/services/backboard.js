@@ -293,17 +293,17 @@ ${formattedTranscript}`;
     }
 
     console.log("Message sent successfully. Status:", statusCode);
-    
+
     // Parse the JSON response from the LLM
     try {
       // Strip markdown code blocks if present
       let cleanedContent = data.content.trim();
-      
+
       // Remove ```json and ``` markers
       cleanedContent = cleanedContent.replace(/^```json\s*\n?/i, '');
       cleanedContent = cleanedContent.replace(/\n?```\s*$/, '');
       cleanedContent = cleanedContent.trim();
-      
+
       const parsedContent = JSON.parse(cleanedContent);
       return parsedContent;
     } catch (parseErr) {
@@ -347,7 +347,7 @@ async function sendMessageChat(threadId, userPrompt) {
     }
 
     console.log("Message sent successfully. Status:", statusCode);
-    
+
     // Return the conversational response directly
     return {
       content: data.content,

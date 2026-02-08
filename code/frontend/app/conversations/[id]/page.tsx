@@ -65,6 +65,8 @@ export default function ConversationDetailPage() {
   const [activeTab, setActiveTab] = useState<'transcript' | 'summary' | 'ai' | 'images'>('transcript');
   const [chatInput, setChatInput] = useState('');
   const [chatMessages, setChatMessages] = useState<Array<{ role: 'user' | 'assistant'; text: string }>>([]);
+  const [chatThreadId, setChatThreadId] = useState<string | null>(null);
+  const [isChatSending, setIsChatSending] = useState(false);
   const [conversation, setConversation] = useState<ConversationDetail | null>(null);
   const [messages, setMessages] = useState<TranscriptEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -244,7 +246,9 @@ export default function ConversationDetailPage() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                  Conversation {conversation.id.slice(0, 6)}
+                  {conversation.summary?.chief_complaint
+                    ? conversation.summary.chief_complaint
+                    : 'Conversation Details'}
                 </h1>
                 <div className="flex items-center space-x-4 text-sm text-gray-600">
                   <span className="flex items-center">
@@ -464,12 +468,42 @@ export default function ConversationDetailPage() {
                 </div>
                 <form
                   className="flex gap-3"
-                  onSubmit={(event) => {
+                  onSubmit={async (event) => {
                     event.preventDefault();
                     const next = chatInput.trim();
-                    if (!next) return;
+                    if (!next || isChatSending) return;
+
                     setChatMessages((prev) => [...prev, { role: 'user', text: next }]);
                     setChatInput('');
+                    setIsChatSending(true);
+
+                    try {
+                      const response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: next, threadId: chatThreadId }),
+                      });
+
+                      if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.details || 'Chat failed');
+                      }
+
+                      const data = await response.json();
+                      setChatThreadId(data.threadId || null);
+                      setChatMessages((prev) => [
+                        ...prev,
+                        { role: 'assistant', text: data.reply || 'No response returned.' },
+                      ]);
+                    } catch (error) {
+                      setChatMessages((prev) => [
+                        ...prev,
+                        { role: 'assistant', text: 'Sorry, I could not answer that right now.' },
+                      ]);
+                      console.error(error);
+                    } finally {
+                      setIsChatSending(false);
+                    }
                   }}
                 >
                   <input
@@ -480,9 +514,10 @@ export default function ConversationDetailPage() {
                   />
                   <button
                     type="submit"
-                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+                    disabled={isChatSending}
+                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-60"
                   >
-                    Send
+                    {isChatSending ? 'Sending...' : 'Send'}
                   </button>
                 </form>
               </div>
