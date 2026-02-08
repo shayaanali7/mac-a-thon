@@ -32,7 +32,7 @@ async function createAssistant() {
     headers,
     body: JSON.stringify({
       name: "Doctor Assistant Open AI",
-      system_prompt: "You summarize doctor-patient conversations. Answer questions about diagnoses, injuries, and treatment history using only the conversation context. Be clear and factual.",
+      system_prompt: "You are a medical conversation analyzer. Respond only in valid JSON format with the following structure: {{\"doctor_speaker\": \"speaker-0 or speaker-1\", \"diagnosis\": \"diagnosis here\", \"medications\": []}}",
       embedding_provider: "google",
       embedding_model_name: "gemini-embedding-001-1536",
       model_name: "gemini-2.5-pro",
@@ -113,7 +113,7 @@ async function uploadAssistantDocument(assistantId, filePath) {
 ======================================================= */
 
 // Create thread
-async function createThread(assistantId) {
+async function createThreadAnalyzer(assistantId) {
   const res = await fetch(
     `${BASE_URL}/assistants/${assistantId}/threads`,
     {
@@ -191,7 +191,18 @@ async function listThreadDocuments(threadId) {
 
 const { request, FormData } = require('undici');
 
-async function sendMessage(threadId, content) {
+async function sendMessageAnalyzer(threadId, transcriptArray) {
+  // Format the transcript into a readable conversation format
+  const formattedTranscript = transcriptArray
+    .map(segment => `${segment.speakerId}: ${segment.text}`)
+    .join('\n');
+
+  // Create the prompt with the transcript
+  const content = `Analyze the following medical conversation transcript and respond ONLY with valid JSON in the exact format specified in your system prompt.
+
+TRANSCRIPT:
+${formattedTranscript}`;
+
   const form = new FormData();
 
   form.append("content", content);
@@ -207,7 +218,6 @@ async function sendMessage(threadId, content) {
     const { statusCode, body } = await request(`${BASE_URL}/threads/${threadId}/messages`, {
       method: "POST",
       headers: {
-        // Remove Content-Type - undici's FormData handles it
         Accept: '*/*',
         "X-API-Key": process.env.BACKBOARD_API_KEY,
       },
@@ -222,7 +232,15 @@ async function sendMessage(threadId, content) {
     }
 
     console.log("Message sent successfully. Status:", statusCode);
-    return data;
+    
+    // Parse the JSON response from the LLM
+    try {
+      const parsedContent = JSON.parse(data.content);
+      return parsedContent;
+    } catch (parseErr) {
+      console.error("Failed to parse LLM response as JSON:", data.content);
+      return data; // Return raw data if parsing fails
+    }
 
   } catch (err) {
     console.error("Fetch error:", err);
@@ -347,7 +365,7 @@ module.exports = {
   uploadAssistantDocument,
 
   // threads
-  createThread,
+  createThreadAnalyzer,
   //   deleteAllThreads,
   listThreads,
   getThread,
@@ -355,7 +373,7 @@ module.exports = {
   listThreadDocuments,
 
   // messages
-  sendMessage,
+  sendMessageAnalyzer,
 
   // documents
   uploadDocument,
