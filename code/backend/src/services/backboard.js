@@ -32,7 +32,36 @@ async function createAssistant() {
     headers,
     body: JSON.stringify({
       name: "Doctor Assistant Open AI",
-      system_prompt: "You are a medical conversation analyzer. Respond only in valid JSON format with the following structure: {{\"doctor_speaker\": \"speaker-0 or speaker-1\", \"diagnosis\": \"diagnosis here\", \"medications\": []}}",
+      system_prompt: `You are a medical conversation analyzer. Respond only in valid JSON format with the following structure:
+
+{{
+  "doctor_speaker": "speaker_0 or speaker_1",
+  "patient_speaker": "speaker_0 or speaker_1",
+  "chief_complaint": "detailed reason for the visit",
+  "symptoms": ["symptom1", "symptom2", "symptom3"],
+  "diagnosis": "detailed diagnosis with reasoning based on symptoms discussed in the conversation",
+  "medications": [
+    {{
+      "name": "medication name",
+      "dosage": "amount (e.g., 500mg)",
+      "frequency": "how often (e.g., twice daily, every 8 hours)",
+      "duration": "how long (e.g., 7 days, 2 weeks)",
+      "instructions": "any special instructions mentioned"
+    }}
+  ],
+  "follow_up": "any follow-up instructions or appointments mentioned",
+  "additional_notes": "any other relevant medical information discussed"
+}}
+
+Important guidelines:
+- For diagnosis: provide a detailed explanation with reasoning based on the symptoms and discussion in the conversation (2-3 sentences minimum)
+- For medications: include ALL details mentioned - name, dosage, frequency, duration, and any special instructions
+- If medication timeframe is mentioned (e.g., "take for 10 days"), include it in the duration field
+- If no medications were prescribed, use an empty array []
+- Be thorough and capture all medical details from the conversation
+- Use actual medical terminology when appropriate
+
+Return ONLY the JSON object, no markdown formatting, no extra text.`,
       embedding_provider: "google",
       embedding_model_name: "gemini-embedding-001-1536",
       model_name: "gemini-2.5-pro",
@@ -235,11 +264,19 @@ ${formattedTranscript}`;
     
     // Parse the JSON response from the LLM
     try {
-      const parsedContent = JSON.parse(data.content);
+      // Strip markdown code blocks if present
+      let cleanedContent = data.content.trim();
+      
+      // Remove ```json and ``` markers
+      cleanedContent = cleanedContent.replace(/^```json\s*\n?/i, '');
+      cleanedContent = cleanedContent.replace(/\n?```\s*$/, '');
+      cleanedContent = cleanedContent.trim();
+      
+      const parsedContent = JSON.parse(cleanedContent);
       return parsedContent;
     } catch (parseErr) {
       console.error("Failed to parse LLM response as JSON:", data.content);
-      return data; // Return raw data if parsing fails
+      return null; // Return null instead of raw data
     }
 
   } catch (err) {
